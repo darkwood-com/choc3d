@@ -1,0 +1,6 @@
+[
+	"../src/Choc3D.js",
+    "../src/app/App.js",
+    "../src/objects/Ball.js",
+    "../src/objects/Plane.js"
+]
