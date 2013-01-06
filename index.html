@@ -48,7 +48,6 @@
         control.addEventListener('change', function() {
             choc3d.light.position.copy(choc3d.camera.position);
         });
-        var zoom = new THREE.Vector3();
 
         FizzyLog = function(data) {
             function round(num, dec) {
@@ -74,7 +73,8 @@
         gui.add(text, 'zoom').listen();
 
         var data = {
-            lastTime: Date.now()
+            lastTime: Date.now(),
+            zoom: new THREE.Vector3()
         };
 
         var events = {
@@ -88,9 +88,9 @@
            },
 
             update:function (dt) {
-                zoom.sub(control.center, choc3d.camera.position);
+                data.zoom.sub(control.center, choc3d.camera.position);
                 text.rotation = FizzyLog(choc3d.camera.rotation);
-                text.zoom = FizzyLog(zoom.length());
+                text.zoom = FizzyLog(data.zoom.length());
 
                 stats.update();
                 control.update();
