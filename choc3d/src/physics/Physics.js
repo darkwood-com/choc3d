@@ -36,5 +36,11 @@ Choc3D.Physics.prototype = {
 
     update: function ( dt ) {
 
+        for ( var i = 0, l = this.objects.length; i < l; i ++ ) {
+
+            this.objects[ i ].position.addSelf( this.objects[ i ].velocity );
+
+        }
+
     }
 };

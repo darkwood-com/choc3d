@@ -59,6 +59,9 @@ Choc3D.Choc3DScene.prototype.addBall = function() {
     ball.position.x = Math.random() - 0.5;
     ball.position.y = Math.random() - 0.5;
     ball.position.z = Math.random() - 0.5;
+    ball.velocity.x = (Math.random() - 0.5) / 50;
+    ball.velocity.y = (Math.random() - 0.5) / 50;
+    ball.velocity.z = (Math.random() - 0.5) / 50;
 
     ball.scale.multiplyScalar(Math.random() / 5 + 0.1);
 
