@@ -49,7 +49,7 @@
             choc3d.light.position.copy(choc3d.camera.position);
         });
 
-        FizzyLog = function(data) {
+        var FizzyLog = function(data) {
             function round(num, dec) {
                 var result = Math.round(num*Math.pow(10,dec))/Math.pow(10,dec);
                 return result;
@@ -63,7 +63,7 @@
 
             return data;
         };
-        FizzyText = function() {
+        var FizzyText = function() {
             this.rotation = '';
             this.zoom = '';
         };
