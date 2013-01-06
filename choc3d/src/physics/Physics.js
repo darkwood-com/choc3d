@@ -6,6 +6,8 @@ Choc3D.Physics = function () {
 
     this.objects = [];
 
+    this.zero = Math.pow(10, -16); //adjust imprecision
+
 };
 
 Choc3D.Physics.prototype = {
@@ -134,6 +136,35 @@ Choc3D.Physics.prototype = {
     },
 
     timeCollisionBallPlane: function( ball, plane ) {
+
+        /*//produit scalaire entre la normale du plan et la direction de la bille
+        var signeDirection = vitesse.dot(pl.getNormale());
+
+        *//*
+         * si signeDirection est proche de ZERO, on consid�re qu'il est nul
+         * car le calcul de t donnerai un chiffre extremement grand
+         *
+         * si le signeDirection > ZERO cela veux dire que la bille va dans la direction oppos�e au plan, il n'y a pas collision
+         *//*
+
+        if ( -this.ZERO < signeDirection) return false;
+
+        Vector3d deltaPos = new Vector3d();
+        deltaPos.sub(pl.getPointPlan(), position);
+
+        double t;
+        //on cherche la collision entre la bille et le plan
+        t = (pl.getNormale().dot(deltaPos)) / signeDirection;
+
+        *//*
+         * nous avons t qui est la collision entre le mileu de la bille et le plan.
+         * ici, on calcule t qui est la collision entre la surface de la bille et le plan
+         * et on enregistre les infos de la collision qui a eu lieu
+         *//*
+
+        //t = t*(1 - rayon/(t*vitesse.length()));
+        lamda[1] = t;
+        return true;*/
 
         return undefined;
 
