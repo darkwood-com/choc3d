@@ -48,6 +48,7 @@
         control.addEventListener('change', function() {
             choc3d.light.position.copy(choc3d.camera.position);
         });
+        var zoom = new THREE.Vector3();
 
         FizzyLog = function(data) {
             function round(num, dec) {
@@ -57,16 +58,20 @@
 
             if( data instanceof THREE.Vector3 ) {
                 return '( ' + round(data.x, 2) + ', ' + round(data.y, 2) + ', ' + round(data.z, 2) + ' )';
+            } else if ((typeof(data) === 'number' || typeof(data) === 'string') && data !== '' && !isNaN(data)) {
+                return round(data, 2);
             }
 
             return data;
         };
         FizzyText = function() {
             this.rotation = '';
+            this.zoom = '';
         };
         var text = new FizzyText();
         var gui = new dat.GUI();
         gui.add(text, 'rotation').listen();
+        gui.add(text, 'zoom').listen();
 
         var data = {
             lastTime: Date.now()
@@ -82,7 +87,9 @@
 
                 choc3d.render();
 
+                zoom.sub(control.center, choc3d.camera.position);
                 text.rotation = FizzyLog(choc3d.camera.rotation);
+                text.zoom = FizzyLog(zoom.length());
 
                 data.lastTime = currTime;
             },
