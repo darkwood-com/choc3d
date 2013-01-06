@@ -78,20 +78,27 @@
         };
 
         var events = {
-            update:function (currTime) {
-                requestAnimationFrame(events.update);
+            animate:function (currTime) {
+                requestAnimationFrame(events.animate);
 
-                stats.update();
-                control.update();
-                choc3d.update(currTime - data.lastTime);
+                events.update(currTime - data.lastTime);
+                events.render();
 
-                choc3d.render();
+                data.lastTime = currTime;
+           },
 
+            update:function (dt) {
                 zoom.sub(control.center, choc3d.camera.position);
                 text.rotation = FizzyLog(choc3d.camera.rotation);
                 text.zoom = FizzyLog(zoom.length());
 
-                data.lastTime = currTime;
+                stats.update();
+                control.update();
+                choc3d.update(dt);
+            },
+
+            render: function () {
+                choc3d.render();
             },
 
             resize:function () {
@@ -105,7 +112,7 @@
         window.addEventListener( 'resize', events.resize, false );
 
         events.resize();
-        events.update(Date.now());
+        events.animate(Date.now());
     }());
 	</script>
 </html>
