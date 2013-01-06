@@ -66,6 +66,22 @@ Choc3D.Choc3DScene.prototype.addBall = function() {
 
 };
 
+Choc3D.Choc3DScene.prototype.add = function ( object ) {
+
+    THREE.Scene.prototype.add.call( this, object );
+
+    this.physics.add( object );
+
+};
+
+Choc3D.Choc3DScene.prototype.remove = function ( object ) {
+
+    this.physics.remove( object );
+
+    THREE.Scene.prototype.remove( this, object );
+
+};
+
 Choc3D.Choc3DScene.prototype.update = function( dt ) {
 
     this.physics.update( dt );
