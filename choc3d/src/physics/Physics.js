@@ -14,7 +14,7 @@ Choc3D.Physics.prototype = {
 
     add: function( object ) {
 
-        if ( object instanceof THREE.Object3D ) {
+        if ( object instanceof Choc3D.Object ) {
 
             this.objects.push( object );
 
