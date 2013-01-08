@@ -6,7 +6,7 @@ Choc3D.Physics = function () {
 
     this.objects = [];
 
-    this.zero = Math.pow(10, -16); //adjust imprecision
+    this.ZERO = Math.pow(2, -32); //adjust imprecision
 
 };
 
@@ -92,7 +92,17 @@ Choc3D.Physics.prototype = {
 
             }
 
-            //apply min collision if found between the two objects
+            //apply time
+            for ( i = 0; i < l; i ++ ) {
+
+                var object = this.objects[ i ];
+                var v = object.velocity.clone().multiplyScalar( collision.time );
+
+                object.position.addSelf( v );
+
+            }
+
+            //apply collision if found between the two objects
             if( collision.objects ) {
 
                 objI = this.objects[ collision.objects.i ];
@@ -114,15 +124,6 @@ Choc3D.Physics.prototype = {
 
             }
 
-            //apply collision time
-            for ( i = 0; i < l; i ++ ) {
-
-                var object = this.objects[ i ];
-
-                object.position.addSelf( object.velocity );
-
-            }
-
             dt -= collision.time;
 
         }
@@ -137,36 +138,32 @@ Choc3D.Physics.prototype = {
 
     timeCollisionBallPlane: function( ball, plane ) {
 
-        /*//produit scalaire entre la normale du plan et la direction de la bille
-        var signeDirection = vitesse.dot(pl.getNormale());
+        //dot product between the normal of the plan and the ball direction
+        var dot = ball.velocity.dot( plane.normal );
 
-        *//*
-         * si signeDirection est proche de ZERO, on consid�re qu'il est nul
-         * car le calcul de t donnerai un chiffre extremement grand
+        /*
+         * if dot is near ZERO, we consider it value as undefined
+         * because time collision calculation would be a to high number
          *
-         * si le signeDirection > ZERO cela veux dire que la bille va dans la direction oppos�e au plan, il n'y a pas collision
-         *//*
+         * if dot > ZERO, it means the ball go to the opposite direction of the plan, there is no collision
+         */
 
-        if ( -this.ZERO < signeDirection) return false;
+        if ( -this.ZERO < dot ) return undefined;
 
-        Vector3d deltaPos = new Vector3d();
-        deltaPos.sub(pl.getPointPlan(), position);
+        var deltaPos = new THREE.Vector3();
+        deltaPos.sub(plane.position, ball.position);
 
-        double t;
-        //on cherche la collision entre la bille et le plan
-        t = (pl.getNormale().dot(deltaPos)) / signeDirection;
+        //seek collision time between the ball and the plan
+        var time = ( plane.normal.dot( deltaPos ) ) / dot;
 
-        *//*
-         * nous avons t qui est la collision entre le mileu de la bille et le plan.
-         * ici, on calcule t qui est la collision entre la surface de la bille et le plan
-         * et on enregistre les infos de la collision qui a eu lieu
-         *//*
+        /*
+         * we calculated time as the collision between the middle of the ball and the plan
+         * here, we calculate time that is the collision between the surface of the ball and the plan
+         */
 
-        //t = t*(1 - rayon/(t*vitesse.length()));
-        lamda[1] = t;
-        return true;*/
+        //time = time * ( 1 - ball.radius / ( time * ball.velocity.length() ) );
 
-        return undefined;
+        return time;
 
     },
 
@@ -175,6 +172,10 @@ Choc3D.Physics.prototype = {
     },
 
     collideBallPlane: function( ball, plane ) {
+
+        var dot = 2 * ball.velocity.dot( plane.normal );
+        var k = plane.normal.clone();
+        ball.velocity.sub( ball.velocity, k.multiplyScalar( dot ) );
 
     }
 };

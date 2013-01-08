@@ -9,6 +9,8 @@ Choc3D.Ball = function ( geometry, material ) {
 
     Choc3D.Object.call( this, new THREE.Mesh( geometry, material ) );
 
+    this.radius = geometry.radius;
+
 };
 
 Choc3D.Ball.prototype = Object.create( Choc3D.Object.prototype );

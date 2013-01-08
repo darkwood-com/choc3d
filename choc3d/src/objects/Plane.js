@@ -15,16 +15,10 @@ Choc3D.Plane = function ( geometry, material ) {
 
 Choc3D.Plane.prototype = Object.create( Choc3D.Object.prototype );
 
-Choc3D.Plane.prototype.computeNormal = function() {
-
-    this.normal.copy(this.up);
-    this.matrix.multiplyVector3(this.normal);
-};
-
 Choc3D.Plane.prototype.lookAt = function ( vector ) {
 
     Choc3D.Object.prototype.lookAt.call( this, vector );
 
-    this.computeNormal();
+    this.normal.sub( vector, this.position ).normalize();
 
 };
