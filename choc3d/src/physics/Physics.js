@@ -132,7 +132,58 @@ Choc3D.Physics.prototype = {
 
     timeCollisionBallBall: function( ballI, ballJ ) {
 
-        return undefined;
+        //relative position
+        var p = new THREE.Vector3();
+        p.sub(ballJ.position, ballI.position);
+
+        //relative velocity
+        var v = new THREE.Vector3();
+        v.sub(ballJ.velocity, ballI.velocity);
+
+        //relative square velocity
+        var v2 = v.clone().multiplySelf(v);
+
+        //kinematic viscosity
+        var kv = p.clone().multiplySelf(v);
+
+        //minimal distance between the two balls
+        var d = ballI.radius + ballJ.radius;
+
+        var c = v2.x + v2.y + v2.z;
+        var b = 2*(kv.x*kv.y + kv.x*kv.z + kv.y*kv.z) + c * Math.pow(d, 2);
+        b -= Math.pow(p.x, 2)*(v2.y + v2.z);
+        b -= Math.pow(p.y, 2)*(v2.x + v2.z);
+        b -= Math.pow(p.z, 2)*(v2.x + v2.y);
+
+        //check if there is a collision (b >= 0)
+        if(b < 0) return undefined;
+
+        //then we can calculate b^(1/2)
+        b = Math.sqrt(b);
+
+        //we also can calculate a
+        var a = -(kv.x + kv.y + kv.z);
+
+        //there is a collision, we seek the min collision time >= 0
+        //t1 and t2 are two possible time collision
+        var time = undefined, t1, t2;
+
+        t1 = a + b;
+        if(t1 >= 0) time = t1;
+
+        t2 = a - b;
+        if(t2 >= 0 && time > t2) time = t2;
+
+        //if time is undefined, then the collision is in the opposite direction
+        if(time === undefined) return undefined;
+
+        //divide time by c
+        time /= c;
+
+        //warning : fix imprecision in time calculation due to computation
+        time -= time * this.ZERO;
+
+        return time;
 
     },
 
@@ -168,6 +219,21 @@ Choc3D.Physics.prototype = {
     },
 
     collideBallBall: function( ballI, ballJ ) {
+
+        //relative velocity
+        var v = new THREE.Vector3();
+        v.sub(ballI.velocity, ballJ.velocity);
+
+        //normal direction vector
+        var k = new THREE.Vector3();
+        k.sub(ballI.position, ballJ.position).normalize();
+
+        //var factor
+        var a = 2 / (1 / ballI.weight + 1 / ballJ.weight) * k.dot(v);
+
+        //apply new velocities
+        ballI.velocity.sub(ballI.velocity, k.clone().multiplyScalar(a/ballI.weight));
+        ballJ.velocity.add(ballJ.velocity, k.clone().multiplyScalar(a/ballJ.weight));
 
     },
 

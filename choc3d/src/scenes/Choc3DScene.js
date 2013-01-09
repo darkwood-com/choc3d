@@ -63,7 +63,15 @@ Choc3D.Choc3DScene.prototype.addBall = function() {
     ball.velocity.y = (Math.random() - 0.5) / 1000;
     ball.velocity.z = (Math.random() - 0.5) / 1000;
 
-    ball.scale.multiplyScalar(Math.random() / 5 + 0.1);
+    var s = Math.random() / 5 + 0.1;
+    ball.scale.multiplyScalar( s );
+    ball.radius *= s;
+
+    //ball volume
+    var volume = (4 * Math.PI * Math.pow(ball.radius, 3) / 3);
+
+    //weight is proportional to the ball volume
+    ball.weight = 2 * volume;
 
     this.add(ball);
 

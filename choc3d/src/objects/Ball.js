@@ -9,7 +9,7 @@ Choc3D.Ball = function ( geometry, material ) {
 
     Choc3D.Object.call( this, new THREE.Mesh( geometry, material ) );
 
-    this.radius = geometry.radius;
+    this.radius = 0.5;
 
 };
 
