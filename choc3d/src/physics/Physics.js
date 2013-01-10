@@ -4,9 +4,9 @@
 
 Choc3D.Physics = function () {
 
-    this.objects = [];
-
     this.ZERO = Math.pow(2, -32); //adjust imprecision
+
+    this.objects = [];
 
 };
 
