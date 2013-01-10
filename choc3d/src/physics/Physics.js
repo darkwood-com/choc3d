@@ -201,18 +201,17 @@ Choc3D.Physics.prototype = {
 
         if ( -this.ZERO < dot ) return undefined;
 
+        //here, we calculate time that is the collision between the surface of the ball and the plan
+        //we calculate the point on the ball surface that is most near the plan
+        var surfacePosition = new THREE.Vector3();
+        surfacePosition.sub(ball.position, plane.normal.clone().multiplyScalar(ball.radius));
+
+        //then we calculate the vector to the collision
         var deltaPos = new THREE.Vector3();
-        deltaPos.sub(plane.position, ball.position);
+        deltaPos.sub(plane.position, surfacePosition);
 
         //seek collision time between the ball and the plan
         var time = ( plane.normal.dot( deltaPos ) ) / dot;
-
-        /*
-         * we calculated time as the collision between the middle of the ball and the plan
-         * here, we calculate time that is the collision between the surface of the ball and the plan
-         */
-
-        //time = time * ( 1 - ball.radius / ( time * ball.velocity.length() ) );
 
         return time;
 
