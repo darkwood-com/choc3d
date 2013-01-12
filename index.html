@@ -19,104 +19,38 @@
     <script src="js/libs/dat.gui.min.js"></script>
     <script src="js/libs/stats.min.js"></script>
 	<script src="js/libs/three.min.js"></script>
-    <script src="js/controls/OrbitControls.js"></script>
 
     <!--script src="choc3d/build/choc3d.js"></script-->
 
     <script src="choc3d/src/Choc3D.js"></script>
-    <script src="choc3d/src/app/App.js"></script>
+    <script src="choc3d/src/apps/App.js"></script>
     <script src="choc3d/src/objects/Object.js"></script>
     <script src="choc3d/src/objects/Ball.js"></script>
     <script src="choc3d/src/objects/Plane.js"></script>
     <script src="choc3d/src/physics/Physics.js"></script>
     <script src="choc3d/src/scenes/Choc3DScene.js"></script>
 
+    <script src="js/controls/OrbitControls.js"></script>
+    <script src="js/runs/Run.js"></script>
+
 	<script type="text/javascript">
     (function() {
         var container = document.getElementById('container');
+        var run = new Choc3D.Run(container);
 
-        var stats = new Stats();
-        stats.domElement.style.position = 'absolute';
-        stats.domElement.style.left = '0px';
-        stats.domElement.style.top = '0px';
-        container.appendChild(stats.domElement);
+        var lastTime = Date.now();
+        var animate = function(currTime) {
+            requestAnimationFrame(animate);
 
-        var choc3d = new Choc3D.App();
-        choc3d.init();
-        container.appendChild(choc3d.renderer.domElement);
+            run.animate(currTime - lastTime);
 
-        var control = new THREE.OrbitControls(choc3d.camera);
-        control.autoRotate = true;
-        control.minDistance = 1;
-        control.maxDistance = 3;
-        control.addEventListener('change', function() {
-            choc3d.light.position.copy(choc3d.camera.position);
-        });
+            lastTime = currTime;
+        }
+        animate(Date.now());
 
-        var FizzyLog = function(data) {
-            function round(num, dec) {
-                var result = Math.round(num*Math.pow(10,dec))/Math.pow(10,dec);
-                return result;
-            }
-
-            if( data instanceof THREE.Vector3 ) {
-                return '( ' + round(data.x, 2) + ', ' + round(data.y, 2) + ', ' + round(data.z, 2) + ' )';
-            } else if ((typeof(data) === 'number' || typeof(data) === 'string') && data !== '' && !isNaN(data)) {
-                return round(data, 2);
-            }
-
-            return data;
-        };
-        var FizzyText = function() {
-            this.rotation = '';
-            this.zoom = '';
-        };
-        var text = new FizzyText();
-        var gui = new dat.GUI();
-        gui.add(text, 'rotation').listen();
-        gui.add(text, 'zoom').listen();
-
-        var data = {
-            lastTime: Date.now(),
-            zoom: new THREE.Vector3()
-        };
-
-        var events = {
-            animate:function (currTime) {
-                requestAnimationFrame(events.animate);
-
-                events.update(currTime - data.lastTime);
-                events.render();
-
-                data.lastTime = currTime;
-           },
-
-            update:function (dt) {
-                data.zoom.sub(control.center, choc3d.camera.position);
-                text.rotation = FizzyLog(choc3d.camera.rotation);
-                text.zoom = FizzyLog(data.zoom.length());
-
-                stats.update();
-                control.update();
-                choc3d.update(dt);
-            },
-
-            render: function () {
-                choc3d.render();
-            },
-
-            resize:function () {
-                var width = container.offsetWidth;
-                var height = container.offsetHeight;
-
-                choc3d.reshape(width, height);
-            }
-        };
-
-        window.addEventListener( 'resize', events.resize, false );
-
-        events.resize();
-        events.animate(Date.now());
+        window.addEventListener( 'resize', function() {
+            run.reshape();
+        }, false);
     }());
 	</script>
 </html>

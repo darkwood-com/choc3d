@@ -9,23 +9,22 @@ Choc3D.App = function() {
     this.camera = new THREE.PerspectiveCamera();
     this.light = new THREE.PointLight( 0xFFFFFF );
 
+    // init
+
+    this.camera.position.x = 2;
+    this.camera.position.y = 2;
+    this.camera.position.z = 2;
+
+    this.scene.add(this.camera);
+
+    this.light.position.copy(this.camera.position);
+    this.scene.add(this.light);
+
 };
 
 Choc3D.App.prototype = {
 
     constructor: Choc3D.App,
-
-    init: function()
-    {
-        this.camera.position.x = 2;
-        this.camera.position.y = 2;
-        this.camera.position.z = 2;
-
-        this.scene.add(this.camera);
-
-        this.light.position.copy(this.camera.position);
-        this.scene.add(this.light);
-    },
 
     reshape: function(width, height)
     {
