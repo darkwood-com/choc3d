@@ -17,6 +17,8 @@ Choc3D.App.prototype = {
 
     init: function()
     {
+        this.camera.position.x = 2;
+        this.camera.position.y = 2;
         this.camera.position.z = 2;
 
         this.scene.add(this.camera);

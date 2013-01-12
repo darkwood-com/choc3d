@@ -46,6 +46,9 @@
         container.appendChild(choc3d.renderer.domElement);
 
         var control = new THREE.OrbitControls(choc3d.camera);
+        control.autoRotate = true;
+        control.minDistance = 1;
+        control.maxDistance = 3;
         control.addEventListener('change', function() {
             choc3d.light.position.copy(choc3d.camera.position);
         });
