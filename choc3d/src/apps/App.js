@@ -12,7 +12,7 @@ Choc3D.App = function() {
     // init
 
     this.camera.position.x = 2;
-    this.camera.position.y = 2;
+    this.camera.position.y = 1;
     this.camera.position.z = 2;
 
     this.scene.add(this.camera);

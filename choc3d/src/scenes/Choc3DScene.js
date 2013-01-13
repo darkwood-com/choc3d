@@ -126,7 +126,7 @@ Choc3D.Choc3DScene.prototype.remove = function ( object ) {
 
     this.physics.remove( object );
 
-    THREE.Scene.prototype.remove( this, object );
+    THREE.Scene.prototype.remove.call( this, object );
 
 };
 
