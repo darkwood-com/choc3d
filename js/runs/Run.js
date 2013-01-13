@@ -4,6 +4,8 @@
 
 Choc3D.Run = function(container) {
 
+    THREE.EventDispatcher.call( this );
+
     var me = this;
 
     this.container = container;
@@ -97,32 +99,94 @@ Choc3D.Run = function(container) {
         },
         lights: function() {
 
+            var vars = {
+                'disco': {
+                    'lights':[]
+                }
+            };
+
             var objects = {
                 'default': function() {
-                    return null;
+                    return [];
                 },
                 'directional': function() {
                     var directional = new THREE.DirectionalLight( 0xffffff, 0.5 );
                     directional.position.set( -1, 1.75, 1 );
                     directional.position.multiplyScalar( 50 );
 
-                    return directional;
+                    return [directional];
+                },
+                'disco': function() {
+                    vars.disco.lights.splice(0, vars.disco.lights.length);
+
+                    var lightList = [];
+                    var c = new THREE.Vector3();
+                    me.choc3d.scene.traverse(function(object) {
+                        if( object instanceof Choc3D.Ball ) {
+                            var light = new THREE.PointLight( 0xffffff, 2.0, 0.5 );
+
+                            c.set( Math.random(), Math.random(), Math.random() ).normalize();
+                            light.color.setRGB( c.x, c.y, c.z );
+                            object.traverse(function(mesh) {
+                                if( mesh instanceof THREE.Mesh && mesh.material.color instanceof THREE.Color ) {
+                                    light.color.copy(mesh.material.color);
+                                }
+                            });
+
+                            light.position.copy(object.position);
+
+                            vars.disco.lights.push({light: light, ball: object});
+
+                            lightList.push(light);
+                        }
+                    });
+                    return lightList;
                 }
             };
 
-            var light = null;
+            var update = {
+                'default': function() {
+                },
+                'directional': function() {
+                },
+                'disco': function() {
+                    var l = vars.disco.lights.length;
+                    for(var i = 0; i < l; i++) {
+                        vars.disco.lights[i]['light'].position.copy(vars.disco.lights[i]['ball'].position);
+                    }
+                }
+            };
+
+            var lightList = [];
+            var lightState = null;
             var lights = {};
             for(var name in objects) {
                 lights[name] = (function(name) {
                     return function() {
-                        if(light) me.choc3d.scene.remove(light);
-                        light = objects[name]();
-                        if(light) me.choc3d.scene.add(light);
+                        var i;
+
+                        for(i = 0; i < lightList.length; i++) {
+                            me.choc3d.scene.remove(lightList[i]);
+                        }
+                        if(lightState) {
+                            me.removeEventListener('update', update[lightState]);
+                        }
+
+                        lightList = objects[name]();
+
+                        for(i = 0; i < lightList.length; i++) {
+                            me.choc3d.scene.add(lightList[i]);
+                        }
+                        me.addEventListener('update', update[name]);
+
+                        //update materials
                         me.choc3d.scene.traverse(function(object) {
                             if( object instanceof THREE.Mesh ) {
                                 object.material.needsUpdate = true;
                             }
                         });
+
+                        lightState = name;
                     };
                 })(name);
             }
@@ -167,51 +231,49 @@ Choc3D.Run = function(container) {
     this.reshape();
 };
 
-Choc3D.Run.prototype = {
+Choc3D.Run.prototype = Object.create( THREE.EventDispatcher.prototype );
 
-    constructor: Choc3D.Run,
+Choc3D.Run.prototype.animate = function (dt) {
 
-    animate:function (dt) {
+    this.update(dt);
+    this.render();
 
-        this.update(dt);
-        this.render();
+};
 
-    },
+Choc3D.Run.prototype.update = function (dt) {
+    var zoom = new THREE.Vector3();
+    zoom.sub(this.control.center, this.choc3d.camera.position);
+    this.data.rotation = this.sprintf(this.choc3d.camera.rotation);
+    this.data.zoom = this.sprintf(zoom.length());
 
-    update: function (dt) {
-        var zoom = new THREE.Vector3();
-        zoom.sub(this.control.center, this.choc3d.camera.position);
-        this.data.rotation = this.sprintf(this.choc3d.camera.rotation);
-        this.data.zoom = this.sprintf(zoom.length());
+    this.stats.update();
+    this.control.update();
+    this.choc3d.update(dt);
 
-        this.stats.update();
-        this.control.update();
-        this.choc3d.update(dt);
-    },
+    this.dispatchEvent( {type: 'update', dt: dt} );
+};
 
-    render: function () {
-        this.choc3d.render();
-    },
+Choc3D.Run.prototype.render = function () {
+    this.choc3d.render();
+};
 
-    reshape: function () {
-        var width = this.container.offsetWidth;
-        var height = this.container.offsetHeight;
+Choc3D.Run.prototype.reshape = function () {
+    var width = this.container.offsetWidth;
+    var height = this.container.offsetHeight;
 
-        this.choc3d.reshape(width, height);
-    },
+    this.choc3d.reshape(width, height);
+};
 
-    sprintf: function(data) {
-        function round(num, dec) {
-            return Math.round(num*Math.pow(10,dec))/Math.pow(10,dec);
-        }
-
-        if( data instanceof THREE.Vector3 ) {
-            return '( ' + round(data.x, 2) + ', ' + round(data.y, 2) + ', ' + round(data.z, 2) + ' )';
-        } else if ((typeof(data) === 'number' || typeof(data) === 'string') && data !== '' && !isNaN(data)) {
-            return round(data, 2);
-        }
-
-        return data;
+Choc3D.Run.prototype.sprintf = function(data) {
+    function round(num, dec) {
+        return Math.round(num*Math.pow(10,dec))/Math.pow(10,dec);
     }
 
+    if( data instanceof THREE.Vector3 ) {
+        return '( ' + round(data.x, 2) + ', ' + round(data.y, 2) + ', ' + round(data.z, 2) + ' )';
+    } else if ((typeof(data) === 'number' || typeof(data) === 'string') && data !== '' && !isNaN(data)) {
+        return round(data, 2);
+    }
+
+    return data;
 };

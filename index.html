@@ -19,7 +19,7 @@
 
     <script src="js/libs/dat.gui.min.js"></script>
     <script src="js/libs/stats.min.js"></script>
-	<script src="js/libs/three.js"></script>
+	<script src="js/libs/three.min.js"></script>
 
     <!--script src="choc3d/build/choc3d.js"></script-->
 
@@ -47,7 +47,7 @@
             run.animate(currTime - lastTime);
 
             lastTime = currTime;
-        }
+        };
         animate(Date.now());
 
         window.addEventListener( 'resize', function() {
