@@ -228,6 +228,131 @@ Choc3D.Run = function(container) {
     }
     folder.open();
 
+    //begin with particles tests
+    var particlesLength = 2000;
+
+    var particles = new THREE.Geometry();
+
+    function newpos( x, y, z ) {
+
+        return new THREE.Vector3( x, y, z );
+
+    }
+
+
+    var Pool = {
+
+        __pools: [],
+
+        // Get a new Vector
+
+        get: function() {
+
+            if ( this.__pools.length > 0 ) {
+
+                return this.__pools.pop();
+
+            }
+
+            console.log( "pool ran out!" )
+            return null;
+
+        },
+
+        // Release a vector back into the pool
+
+        add: function( v ) {
+
+            this.__pools.push( v );
+
+        }
+
+    };
+
+
+    for ( i = 0; i < particlesLength; i ++ ) {
+
+        particles.vertices.push( newpos( 0, 0, 0 ) );
+        Pool.add( i );
+
+    }
+
+    var material = new THREE.ParticleBasicMaterial();
+
+    var particleCloud = new THREE.ParticleSystem( particles, material );
+
+    this.choc3d.scene.add(particleCloud);
+
+    particleCloud.sortParticles = true;
+
+    var setTargetParticle = function() {
+
+        var target = Pool.get();
+
+        return target;
+
+    };
+
+    var onParticleCreated = function( p ) {
+
+        var position = p.position;
+        p.target.position = position;
+
+        var target = p.target;
+
+        if ( target ) {
+
+            particles.vertices[ target ] = p.position;
+
+        }
+
+    };
+
+    var onParticleDead = function( particle ) {
+
+        var target = particle.target;
+
+        if ( target ) {
+
+            // Hide the particle
+
+            particles.vertices[ target ].set( Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY );
+
+            // Mark particle system as available by returning to pool
+
+            Pool.add( particle.target );
+
+        }
+
+    };
+
+    var counter = new SPARKS.SteadyCounter( 10 );
+    var sparksEmitter = new SPARKS.Emitter( counter );
+
+    var emitterpos = new THREE.Vector3( 1, 1, 0 );
+
+    sparksEmitter.addInitializer( new SPARKS.Position( new SPARKS.PointZone( emitterpos ) ) );
+    sparksEmitter.addInitializer( new SPARKS.Lifetime( 1, 15 ));
+    sparksEmitter.addInitializer( new SPARKS.Target( null, setTargetParticle ) );
+
+
+    //sparksEmitter.addInitializer( new SPARKS.Velocity( new SPARKS.PointZone( new THREE.Vector3( 0, -5, 1 ) ) ) );
+    // TOTRY Set velocity to move away from centroid
+
+    sparksEmitter.addAction( new SPARKS.Age() );
+    sparksEmitter.addAction( new SPARKS.Accelerate( 0, 0, 0 ) );
+    sparksEmitter.addAction( new SPARKS.Move() );
+    //sparksEmitter.addAction( new SPARKS.RandomDrift( 90, 100, 2000 ) );*/
+
+
+    sparksEmitter.addCallback( "created", onParticleCreated );
+    sparksEmitter.addCallback( "dead", onParticleDead );
+    this.addEventListener('update', function(args) {
+        sparksEmitter.update(args.dt / 1000);
+    });
+
+    this.particles = particles;
+
     this.reshape();
 };
 
