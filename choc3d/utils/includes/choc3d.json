@@ -1,6 +1,9 @@
 [
-	"../src/Choc3D.js",
-    "../src/app/App.js",
+    "../src/Choc3D.js",
+    "../src/apps/App.js",
+    "../src/objects/Object.js",
     "../src/objects/Ball.js",
-    "../src/objects/Plane.js"
+    "../src/objects/Plane.js",
+    "../src/physics/Physics.js",
+    "../src/scenes/Choc3DScene.js"
 ]
