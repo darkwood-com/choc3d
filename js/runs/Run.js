@@ -192,6 +192,165 @@ Choc3D.Run = function(container) {
             }
 
             return lights;
+        },
+        particles: function() {
+            //load particleList into the scene
+            var particlesLength = 2000;
+
+            var particleList = new THREE.Geometry();
+
+            var Pool = {
+                __pools: [],
+                pop: function() {
+                    if ( this.__pools.length > 0 ) {
+                        return this.__pools.pop();
+                    }
+
+                    console.log( "pool ran out!" )
+                    return null;
+                },
+                push: function( v ) {
+                    this.__pools.push( v );
+                },
+                list: function() {
+                    return this.__pools;
+                }
+            };
+
+            for ( i = 0; i < particlesLength; i ++ ) {
+                particleList.vertices.push( new THREE.Vector3( Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY ) );
+                Pool.push( i );
+            }
+
+            var sprite = generateSprite() ;
+
+            function generateSprite() {
+
+                var canvas = document.createElement( 'canvas' );
+                canvas.width = 128;
+                canvas.height = 128;
+
+                var context = canvas.getContext( '2d' );
+
+                context.beginPath();
+                context.arc( 64, 64, 60, 0, Math.PI * 2, false) ;
+                context.closePath();
+
+                context.lineWidth = 0.5;
+                context.stroke();
+                context.restore();
+
+                var gradient = context.createRadialGradient( canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2 );
+
+                gradient.addColorStop( 0, 'rgba(255,255,255,1)' );
+                gradient.addColorStop( 0.2, 'rgba(255,255,255,1)' );
+                gradient.addColorStop( 0.4, 'rgba(200,200,200,1)' );
+                gradient.addColorStop( 1, 'rgba(0,0,0,1)' );
+
+                context.fillStyle = gradient;
+
+                context.fill();
+
+                return canvas;
+
+            }
+
+            var texture = new THREE.Texture( sprite );
+            texture.needsUpdate = true;
+
+            var material = new THREE.ParticleBasicMaterial({
+                map: texture,
+                depthWrite:		false,
+                transparent:	true
+            });
+
+            var particleCloud = new THREE.ParticleSystem( particleList, material );
+
+            me.choc3d.scene.add(particleCloud);
+
+            var objects = {
+                'none': function() {
+                    return [];
+                },
+                'line': function() {
+                    var sparksEmitterList = [];
+                    me.choc3d.scene.traverse(function(object) {
+                        if( object instanceof Choc3D.Ball ) {
+                            var ball = object;
+
+                            var counter = new SPARKS.SteadyCounter( 50 );
+                            var sparksEmitter = new SPARKS.Emitter( counter );
+
+                            sparksEmitter.addInitializer( new SPARKS.Position( new SPARKS.PointZone( ball.position ) ) );
+                            sparksEmitter.addInitializer( new SPARKS.Lifetime( 0.5 ));
+                            sparksEmitter.addInitializer( new SPARKS.Target( null, function() {
+                                // pop an available particle from pool
+                                var target = Pool.pop();
+                                return target;
+                            }));
+                            //sparksEmitter.addInitializer( new SPARKS.Velocity( new SPARKS.PointZone( new THREE.Vector3( 0, -5, 1 ) ) ) );
+
+                            sparksEmitter.addAction( new SPARKS.Age() );
+                            //sparksEmitter.addAction( new SPARKS.Accelerate( 0, 0.5, 0.5 ) );
+                            sparksEmitter.addAction( new SPARKS.Move() );
+                            //sparksEmitter.addAction( new SPARKS.RandomDrift( 1, 1, 1) );
+
+
+                            sparksEmitter.addCallback( SPARKS.EVENT_PARTICLE_CREATED , function( p ) {
+                                p.target.position = p.position;
+                                var target = p.target;
+
+                                if ( target ) {
+                                    particleList.vertices[ target ] = p.position;
+                                }
+                            });
+                            sparksEmitter.addCallback( SPARKS.EVENT_PARTICLE_DEAD , function( p ) {
+                                var target = p.target;
+
+                                if ( target ) {
+                                    // Hide the particle
+                                    particleList.vertices[ target ].set( Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY );
+
+                                    // Mark particle system as available by returning to pool
+                                    Pool.push( p.target );
+                                }
+                            });
+
+                            sparksEmitterList.push(sparksEmitter);
+                        }
+                    });
+                    return sparksEmitterList;
+                }
+            };
+
+            //emitter list
+            var sparksEmitterList = [];
+            me.addEventListener('update', function(args) {
+                var dt = args.dt / 1000;
+                for(var i = 0; i < sparksEmitterList.length; i++) {
+                    sparksEmitterList[i].update(dt);
+                }
+            });
+
+            me.addEventListener('update', function(args) {
+                particleCloud.geometry.verticesNeedUpdate = true;
+            });
+
+            var particles = {};
+            for(var name in objects) {
+                particles[name] = (function(name) {
+                    return function() {
+                        for(var i = 0; i < sparksEmitterList.length; i++) {
+                            for(var j = 0; j < sparksEmitterList[i]._particles.length; j++) {
+                                sparksEmitterList[i].dispatchEvent( SPARKS.EVENT_PARTICLE_DEAD, sparksEmitterList[i]._particles[j]);
+                            }
+                        }
+                        sparksEmitterList = objects[name]();
+                    };
+                })(name);
+            }
+
+            return particles;
         }
     };
 
@@ -227,131 +386,14 @@ Choc3D.Run = function(container) {
         folder.add(this.data, property).name(name);
     }
     folder.open();
-
-    //begin with particles tests
-    var particlesLength = 2000;
-
-    var particles = new THREE.Geometry();
-
-    function newpos( x, y, z ) {
-
-        return new THREE.Vector3( x, y, z );
-
+    /*folder = gui.addFolder('Particles');
+    var particles = this.data.particles();
+    for(name in particles) {
+        property = 'particle_' + name;
+        this.data[property] = particles[name];
+        folder.add(this.data, property).name(name);
     }
-
-
-    var Pool = {
-
-        __pools: [],
-
-        // Get a new Vector
-
-        get: function() {
-
-            if ( this.__pools.length > 0 ) {
-
-                return this.__pools.pop();
-
-            }
-
-            console.log( "pool ran out!" )
-            return null;
-
-        },
-
-        // Release a vector back into the pool
-
-        add: function( v ) {
-
-            this.__pools.push( v );
-
-        }
-
-    };
-
-
-    for ( i = 0; i < particlesLength; i ++ ) {
-
-        particles.vertices.push( newpos( 0, 0, 0 ) );
-        Pool.add( i );
-
-    }
-
-    var material = new THREE.ParticleBasicMaterial();
-
-    var particleCloud = new THREE.ParticleSystem( particles, material );
-
-    this.choc3d.scene.add(particleCloud);
-
-    particleCloud.sortParticles = true;
-
-    var setTargetParticle = function() {
-
-        var target = Pool.get();
-
-        return target;
-
-    };
-
-    var onParticleCreated = function( p ) {
-
-        var position = p.position;
-        p.target.position = position;
-
-        var target = p.target;
-
-        if ( target ) {
-
-            particles.vertices[ target ] = p.position;
-
-        }
-
-    };
-
-    var onParticleDead = function( particle ) {
-
-        var target = particle.target;
-
-        if ( target ) {
-
-            // Hide the particle
-
-            particles.vertices[ target ].set( Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY );
-
-            // Mark particle system as available by returning to pool
-
-            Pool.add( particle.target );
-
-        }
-
-    };
-
-    var counter = new SPARKS.SteadyCounter( 10 );
-    var sparksEmitter = new SPARKS.Emitter( counter );
-
-    var emitterpos = new THREE.Vector3( 1, 1, 0 );
-
-    sparksEmitter.addInitializer( new SPARKS.Position( new SPARKS.PointZone( emitterpos ) ) );
-    sparksEmitter.addInitializer( new SPARKS.Lifetime( 1, 15 ));
-    sparksEmitter.addInitializer( new SPARKS.Target( null, setTargetParticle ) );
-
-
-    //sparksEmitter.addInitializer( new SPARKS.Velocity( new SPARKS.PointZone( new THREE.Vector3( 0, -5, 1 ) ) ) );
-    // TOTRY Set velocity to move away from centroid
-
-    sparksEmitter.addAction( new SPARKS.Age() );
-    sparksEmitter.addAction( new SPARKS.Accelerate( 0, 0, 0 ) );
-    sparksEmitter.addAction( new SPARKS.Move() );
-    //sparksEmitter.addAction( new SPARKS.RandomDrift( 90, 100, 2000 ) );*/
-
-
-    sparksEmitter.addCallback( "created", onParticleCreated );
-    sparksEmitter.addCallback( "dead", onParticleDead );
-    this.addEventListener('update', function(args) {
-        sparksEmitter.update(args.dt / 1000);
-    });
-
-    this.particles = particles;
+    folder.open();*/
 
     this.reshape();
 };
@@ -380,6 +422,8 @@ Choc3D.Run.prototype.update = function (dt) {
 
 Choc3D.Run.prototype.render = function () {
     this.choc3d.render();
+
+    this.dispatchEvent( {type: 'render'} );
 };
 
 Choc3D.Run.prototype.reshape = function () {
